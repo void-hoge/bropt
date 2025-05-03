@@ -47,6 +47,8 @@ $
 | Prime      | 0.115         | 2.71              | 1.12        | **0.104**   |
 | SelfInt    | 1.89          | 2.19              | 2.05        | **1.63**    |
 | Sudoku     | 1.03          | SIGSEGV           | 0.724       | **0.603**   |
+|------------|---------------|-------------------|-------------|-------------|
+| Fastest    | 2             | 0                 | 2           | 9           |
 
 - `bffsreef` by Sree Kotay 
   - Implementing brainfuck Part 1: http://sree.kotay.com/2013/02/implementing-brainfuck.html 
