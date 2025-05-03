@@ -7,7 +7,7 @@ pub enum InstType{
     ShiftInc,
     Output,
     Input,
-    Search,
+    Seek,
     Skip,
     Set,
     Mulzero,
@@ -32,7 +32,7 @@ pub enum BaseInst {
     Input,
     Reset,
     Mul(i32, u8),
-    Search(i32),
+    Seek(i32),
     Skip(i32, u8, i16),
     Block(Vec<BaseInst>, bool),
 }
@@ -133,7 +133,7 @@ pub fn fold_simple_loops(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                     if inner.len() == 1 {
                         match inner[0] {
                             BaseInst::Inc(x) if gcd(x as u32, 256) == 1 => BaseInst::Reset,
-                            BaseInst::Shift(n) => BaseInst::Search(n),
+                            BaseInst::Shift(n) => BaseInst::Seek(n),
                             _ => BaseInst::Block(inner, stability),
                         }
                     } else {
@@ -273,9 +273,9 @@ pub fn remove_dead_writes(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                             removed.push(BaseInst::Inc(*n));
                         }
                     },
-                    BaseInst::Search(offset) => {
+                    BaseInst::Seek(offset) => {
                         targets.clear();
-                        removed.push(BaseInst::Search(*offset));
+                        removed.push(BaseInst::Seek(*offset));
                     },
                     BaseInst::Skip(offset, inc, delta) => {
                         targets.clear();
@@ -340,7 +340,7 @@ pub fn move_repeating_sets(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                             },
                             BaseInst::Output => seq.push(BaseInst::Output),
                             BaseInst::Input => seq.push(BaseInst::Input),
-                            BaseInst::Search(..) | BaseInst::Skip(..) | BaseInst::Block(..) => unreachable!(),
+                            BaseInst::Seek(..) | BaseInst::Skip(..) | BaseInst::Block(..) => unreachable!(),
                         }
                     }
                     seq.reverse();
@@ -446,10 +446,10 @@ pub fn flatten(prog: Vec<BaseInst>) -> Vec<Inst> {
                         flat.push(Inst{cmd: InstType::Mul, arg: offset, inc: weight, delta: 0});
                     }
                 },
-                BaseInst::Search(offset) => {
+                BaseInst::Seek(offset) => {
                     let delta = pick_shift(iter);
                     let inc = pick_inc(iter);
-                    flat.push(Inst{cmd: InstType::Search, arg: offset, inc: inc, delta: delta});
+                    flat.push(Inst{cmd: InstType::Seek, arg: offset, inc: inc, delta: delta});
                 },
                 BaseInst::Skip(offset, inc, delta) => {
                     flat.push(Inst{cmd: InstType::Skip, arg: offset, inc: inc, delta: delta});
@@ -520,7 +520,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
             }
             dp = (dp as isize + *delta as isize) as usize;
             data[dp] = data[dp].wrapping_add(*inc);
-        } else if *cmd == InstType::Search {
+        } else if *cmd == InstType::Seek {
             while data[dp] != 0 {
                 dp = (dp as isize + *arg as isize) as usize;
             }
@@ -597,7 +597,7 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
                 }
                 ptr = ptr.offset(*delta as isize);
                 ptr.write(ptr.read() + *inc);
-            } else if *cmd == InstType::Search {
+            } else if *cmd == InstType::Seek {
                 while ptr.read() != 0 {
                     ptr = ptr.offset(*arg as isize);
                 }
