@@ -50,7 +50,7 @@ $
 |------------|---------------|-------------------|-------------|-------------|
 | Fastest    | 2             | 0                 | 2           | 9           |
 
-- `bffsreef` by Sree Kotay 
+- `bffsree` by Sree Kotay 
   - Implementing brainfuck Part 1: http://sree.kotay.com/2013/02/implementing-brainfuck.html 
   - Implementing brainfuck Part 2: http://sree.kotay.com/2013/02/implementing-brainfuck-part-2.html
 - `BrainForked` by John Griffin
