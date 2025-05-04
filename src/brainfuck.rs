@@ -19,9 +19,9 @@ pub enum InstType{
 #[derive(Debug)]
 pub struct Inst {
     cmd: InstType,
-    arg: i32,
     inc: u8,
     delta: i16,
+    arg: i32,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -124,7 +124,6 @@ pub fn fold_simple_loops(prog: Vec<BaseInst>) -> Vec<BaseInst> {
         }
         a
     }
-
     fn fold_block(block: Vec<BaseInst>) -> Vec<BaseInst> {
         block.into_iter().map(|inst| {
             match inst {
@@ -144,7 +143,6 @@ pub fn fold_simple_loops(prog: Vec<BaseInst>) -> Vec<BaseInst> {
             }
         }).collect()
     }
-
     fold_block(prog)
 }
 
@@ -295,12 +293,12 @@ pub fn remove_dead_writes(prog: Vec<BaseInst>) -> Vec<BaseInst> {
     remove_block(prog, false)
 }
 
-pub fn move_repeating_sets(prog: Vec<BaseInst>) -> Vec<BaseInst> {
+pub fn move_repeating_resets(prog: Vec<BaseInst>) -> Vec<BaseInst> {
     let mut moved = Vec::with_capacity(prog.len());
     for inst in prog {
         match inst {
             BaseInst::Block(block, flag) => {
-                let moved_block = move_repeating_sets(block);
+                let moved_block = move_repeating_resets(block);
                 if flag && moved_block.iter().all(|ins| !matches!(ins, BaseInst::Block(..))) {
                     let mut unremovable = HashSet::<i32>::new();
                     unremovable.insert(0);
@@ -467,7 +465,6 @@ pub fn flatten(prog: Vec<BaseInst>) -> Vec<Inst> {
         }
         flat
     }
-
     let mut iter = prog.into_iter().peekable();
     let mut flat = flatten_block(&mut iter);
     let mut stack = Vec::new();
@@ -488,7 +485,7 @@ pub fn flatten(prog: Vec<BaseInst>) -> Vec<Inst> {
 }
 
 #[allow(dead_code)]
-#[inline(always)]
+#[inline]
 pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     let mut data = vec![0u8; length];
     let mut dp: usize = 0;
@@ -567,7 +564,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
 }
 
 #[allow(dead_code)]
-#[inline(always)]
+#[inline]
 pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     let mut data = vec![0u8; length];
     let mut ptr = data.as_mut_ptr();
@@ -615,16 +612,14 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
                 ptr = ptr.offset(*delta as isize);
 
             } else if *cmd == InstType::Mul {
-                let cur = ptr.read();
-                if cur != 0 {
+                if ptr.read() != 0 {
                     let pos = ptr.offset(*arg as isize);
-                    pos.write(pos.read() + cur * *inc);
+                    pos.write(pos.read() + ptr.read() * *inc);
                 }
             } else if *cmd == InstType::Mulzero {
-                let cur = ptr.read();
-                if cur != 0 {
+                if ptr.read() != 0 {
                     let pos = ptr.offset(*arg as isize);
-                    pos.write(pos.read() + cur * *inc);
+                    pos.write(pos.read() + ptr.read() * *inc);
                     ptr.write(0);
                 }
                 ptr = ptr.offset(*delta as isize);
@@ -654,13 +649,13 @@ pub fn compile(code: &str) -> Vec<Inst> {
     prog = fold_mul_loops(prog);
     prog = remove_dead_writes(prog);
     prog = remove_dead_writes(prog);
-    prog = move_repeating_sets(prog);
+    prog = move_repeating_resets(prog);
     prog = compress(prog);
     prog = fold_simple_loops(prog);
     prog = fold_mul_loops(prog);
     prog = remove_dead_writes(prog);
     prog = remove_dead_writes(prog);
-    prog = move_repeating_sets(prog);
+    prog = move_repeating_resets(prog);
     prog = compress(prog);
     prog = fold_simple_loops(prog);
     prog = fold_mul_loops(prog);
