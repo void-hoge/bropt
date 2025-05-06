@@ -90,7 +90,7 @@ pub fn compress(prog: Vec<BaseInst>) -> Vec<BaseInst> {
             match inst {
                 BaseInst::Inc(mut val) => {
                     while let Some(BaseInst::Inc(next)) = iter.peek() {
-                        val = val.wrapping_add(*next);
+                        val += *next;
                         iter.next();
                     }
                     if val != 0 {
@@ -203,7 +203,7 @@ pub fn fold_mul_loops(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                         match inst {
                             BaseInst::Inc(val) => {
                                 let entry = changes.entry(ptr).or_insert(0);
-                                *entry = entry.wrapping_add(*val);
+                                *entry += *val;
                             },
                             BaseInst::Shift(offset) => ptr += offset,
                             _ => unreachable!(),
@@ -494,39 +494,36 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
         let Inst{cmd, arg, inc, delta} = &prog[ip];
         if *cmd == InstType::ShiftInc {
             dp = (dp as isize + *arg as isize) as usize;
-            data[dp] = data[dp].wrapping_add(*inc);
+            data[dp] += *inc;
             dp = (dp as isize + *delta as isize) as usize;
-        } else if *cmd == InstType::Output {
+        }else if *cmd == InstType::Output {
             dp = (dp as isize + *arg as isize) as usize;
             print!("{}", data[dp] as char);
             dp = (dp as isize + *delta as isize) as usize;
-            data[dp] = data[dp].wrapping_add(*inc);
+            data[dp] += *inc;
             if FLUSH {
                 io::stdout().flush().unwrap();
             }
         } else if *cmd == InstType::Input {
             dp = (dp as isize + *arg as isize) as usize;
-            let mut buf = [0];
-            match io::stdin().read_exact(&mut buf) {
-                Ok(()) => {
-                    data[dp] = buf[0];
-                },
-                Err(_) => {
-                    data[dp] = 0u8;
-                },
+            let mut buf = [0u8];
+            if io::stdin().read_exact(&mut buf).is_ok() {
+                data[dp] = buf[0];
+            } else {
+                data[dp] = 0u8;
             }
             dp = (dp as isize + *delta as isize) as usize;
-            data[dp] = data[dp].wrapping_add(*inc);
+            data[dp] += *inc;
         } else if *cmd == InstType::Seek {
             while data[dp] != 0 {
                 dp = (dp as isize + *arg as isize) as usize;
             }
             dp = (dp as isize + *delta as isize) as usize;
-            data[dp] = data[dp].wrapping_add(*inc);
+            data[dp] += *inc;
         } else if *cmd == InstType::Skip {
             while data[dp] != 0 {
                 let pos = (dp as isize + *delta as isize) as usize;
-                data[pos] = data[pos].wrapping_add(*inc);
+                data[pos] += *inc;
                 dp = (dp as isize + *arg as isize) as usize;
             }
         } else if *cmd == InstType::Set {
@@ -536,12 +533,12 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
         } else if *cmd == InstType::Mul {
             if data[dp] != 0 {
                 let pos = (dp as isize + *arg as isize) as usize;
-                data[pos] = data[pos].wrapping_add(data[dp].wrapping_mul(*inc));
+                data[pos] += data[dp] * *inc;
             }
         } else if *cmd == InstType::Mulzero {
             if data[dp] != 0 {
                 let pos = (dp as isize + *arg as isize) as usize;
-                data[pos] = data[pos].wrapping_add(data[dp].wrapping_mul(*inc));
+                data[pos] += data[dp] * *inc;
                 data[dp] = 0;
             }
             dp = (dp as isize + *delta as isize) as usize;
@@ -549,13 +546,13 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
             if data[dp] == 0 {
                 ip = *arg as usize;
             } else {
-                data[dp] = data[dp].wrapping_add(*inc);
+                data[dp] += *inc;
                 dp = (dp as isize + *delta as isize) as usize;
             }
         } else /* if *cmd == InstType::Close */ {
             if data[dp] != 0 {
                 ip = *arg as usize;
-                data[dp] = data[dp].wrapping_add(*inc);
+                data[dp] += *inc;
                 dp = (dp as isize + *delta as isize) as usize;
             }
         }
@@ -564,7 +561,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
 }
 
 #[allow(dead_code)]
-#[inline(always)]
+#[inline]
 pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     let mut data = vec![0u8; length];
     let mut ptr = data.as_mut_ptr();
