@@ -81,7 +81,6 @@ pub fn parse(code: &str) -> Vec<BaseInst> {
     block
 }
 
-#[inline(always)]
 pub fn compress(prog: Vec<BaseInst>) -> Vec<BaseInst> {
     fn compress_block(block: Vec<BaseInst>) -> Vec<BaseInst> {
         let mut iter = block.into_iter().peekable();
@@ -421,13 +420,13 @@ pub fn flatten(prog: Vec<BaseInst>) -> Vec<Inst> {
                     }
                 },
                 BaseInst::Output => {
-                    let delta = pick_shift(iter);
                     let inc = pick_inc(iter);
+                    let delta = pick_shift(iter);
                     flat.push(Inst{cmd: InstType::Output, arg: 0, inc: inc, delta: delta});
                 },
                 BaseInst::Input => {
-                    let delta = pick_shift(iter);
                     let inc = pick_inc(iter);
+                    let delta = pick_shift(iter);
                     flat.push(Inst{cmd: InstType::Input, arg: 0, inc: inc, delta: delta});
                 },
                 BaseInst::Reset => {
@@ -499,8 +498,8 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
         }else if *cmd == InstType::Output {
             dp = (dp as isize + *arg as isize) as usize;
             print!("{}", data[dp] as char);
-            dp = (dp as isize + *delta as isize) as usize;
             data[dp] += *inc;
+            dp = (dp as isize + *delta as isize) as usize;
             if FLUSH {
                 io::stdout().flush().unwrap();
             }
@@ -512,8 +511,8 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
             } else {
                 data[dp] = 0u8;
             }
-            dp = (dp as isize + *delta as isize) as usize;
             data[dp] += *inc;
+            dp = (dp as isize + *delta as isize) as usize;
         } else if *cmd == InstType::Seek {
             while data[dp] != 0 {
                 dp = (dp as isize + *arg as isize) as usize;
@@ -572,8 +571,8 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
             if *cmd == InstType::Output {
                 ptr = ptr.offset(*arg as isize);
                 print!("{}", ptr.read() as char);
-                ptr = ptr.offset(*delta as isize);
                 ptr.write(ptr.read() + *inc);
+                ptr = ptr.offset(*delta as isize);
                 if FLUSH {
                     io::stdout().flush().unwrap();
                 }
@@ -585,8 +584,8 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
                 } else {
                     ptr.write(0);
                 }
-                ptr = ptr.offset(*delta as isize);
                 ptr.write(ptr.read() + *inc);
+                ptr = ptr.offset(*delta as isize);
             } else if *cmd == InstType::ShiftInc {
                 ptr = ptr.offset(*arg as isize);
                 ptr.write(ptr.read() + *inc);
