@@ -564,7 +564,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
 }
 
 #[allow(dead_code)]
-#[inline]
+#[inline(always)]
 pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     let mut data = vec![0u8; length];
     let mut ptr = data.as_mut_ptr();
@@ -572,11 +572,7 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     unsafe {
         while ip < prog.len() {
             let Inst { cmd, arg, inc, delta } = &prog[ip];
-            if *cmd == InstType::ShiftInc {
-                ptr = ptr.offset(*arg as isize);
-                ptr.write(ptr.read() + *inc);
-                ptr = ptr.offset(*delta as isize);
-            } else if *cmd == InstType::Output {
+            if *cmd == InstType::Output {
                 ptr = ptr.offset(*arg as isize);
                 print!("{}", ptr.read() as char);
                 ptr = ptr.offset(*delta as isize);
@@ -594,6 +590,10 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
                 }
                 ptr = ptr.offset(*delta as isize);
                 ptr.write(ptr.read() + *inc);
+            } else if *cmd == InstType::ShiftInc {
+                ptr = ptr.offset(*arg as isize);
+                ptr.write(ptr.read() + *inc);
+                ptr = ptr.offset(*delta as isize);
             } else if *cmd == InstType::Seek {
                 while ptr.read() != 0 {
                     ptr = ptr.offset(*arg as isize);
@@ -610,19 +610,14 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
                 ptr = ptr.offset(*arg as isize);
                 ptr.write(*inc);
                 ptr = ptr.offset(*delta as isize);
-
-            } else if *cmd == InstType::Mul {
-                if ptr.read() != 0 {
-                    let pos = ptr.offset(*arg as isize);
-                    pos.write(pos.read() + ptr.read() * *inc);
-                }
             } else if *cmd == InstType::Mulzero {
-                if ptr.read() != 0 {
-                    let pos = ptr.offset(*arg as isize);
-                    pos.write(pos.read() + ptr.read() * *inc);
-                    ptr.write(0);
-                }
+                let pos = ptr.offset(*arg as isize);
+                pos.write(pos.read() + ptr.read() * *inc);
+                ptr.write(0);
                 ptr = ptr.offset(*delta as isize);
+            } else if *cmd == InstType::Mul {
+                let pos = ptr.offset(*arg as isize);
+                pos.write(pos.read() + ptr.read() * *inc);
             } else if *cmd == InstType::Open {
                 if ptr.read() == 0 {
                     ip = *arg as usize;
