@@ -61,6 +61,8 @@ $
   - https://qiita.com/voidhoge/items/a4ca5888a624523906ae
 - `bropt` (this work)
 
+![result/bfi_comp.png](./result/bfi_comp.png)
+
 ## Optimization
 - Run-length compression of `+`/`-` and `<`/`>` instructions
 - Folding of the reset idiom `[-]`
