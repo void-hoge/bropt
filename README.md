@@ -26,35 +26,36 @@ Options:
 $
 ```
 
-## Performance
+## Experimental Result
 
 - Benchmark programs and inputs are available in the `benches` directory.
 - Average execution time of 100 runs, measured after a 100-run warm-up.
+  - Benchmark script: [`benchmark.sh`](./benchmark.sh)
   - ThinkPad X13 Gen3 (Ryzen 7 PRO 6850U, 32GB RAM, WD Black SN770 1TB SSD)
   - Debian GNU/Linux
 
-|            | `bffsree` [s] | `BrainForked` [s] | `brust` [s] | `bropt` [s] |
-|------------|---------------|-------------------|-------------|-------------|
-| awib       | SIGSEGV       | SIGSEGV           | **0.0197**  | 0.0216      |
-| Collatz    | 1.41          | 1.75              | 1.71        | **1.24**    |
-| Counter    | 2.49          | 2.58              | 2.27        | **2.04**    |
-| EasyOpt    | 0.0353        | 0.0573            | **0.0308**  | **0.0308**  |
-| Factor     | 1.98          | 2.95              | 1.66        | **1.53**    |
-| Hanoi      | **0.0159**    | 0.0167            | 0.112       | 0.0167      |
-| Life       | 0.0117        | 0.0231            | **0.0114**  | **0.0113**  |
-| Long       | 0.0654        | 0.731             | 0.664       | **0.0527**  |
-| Mandelbrot | 1.44          | 1.41              | 1.52        | **1.36**    |
-| Prime      | 0.115         | 2.71              | 1.12        | **0.109**   |
-| SelfInt    | 1.89          | 2.19              | 2.05        | **1.63**    |
-| Sudoku     | 1.03          | SIGSEGV           | 0.724       | **0.639**   |
-|------------|---------------|-------------------|-------------|-------------|
-| Fastest    | 1             | 0                 | 3           | 10          |
+|            | `brust` [s] | `Tritium` [s] | `bffsree` [s] | `bropt` [s] |
+|------------|-------------|---------------|---------------|-------------|
+| awib       | **0.0197**  | 0.350         | SIGSEGV       | 0.0233      |
+| Collatz    | 1.71        | 1.51          | 1.41          | **1.29**    |
+| Counter    | 2.27        | **1.92**      | 2.49          | 1.96        |
+| EasyOpt    | 0.0308      | **0.0200**    | 0.0353        | 0.0308      |
+| Factor     | 1.66        | 2.24          | 1.98          | **1.58**    |
+| Hanoi      | 0.112       | 0.0711        | **0.0159**    | 0.0177      |
+| Life       | **0.0114**  | 0.0285        | 0.0117        | 0.0119      |
+| Long       | 0.664       | 0.652         | 0.0654        | **0.0552**  |
+| Mandelbrot | 1.52        | 1.95          | 1.44          | **1.38**    |
+| Prime      | 1.12        | **0.102**     | 0.115         | 0.124       |
+| SelfInt    | 2.05        | 2.59          | 1.89          | **1.64**    |
+| Sudoku     | 0.724       | 0.741         | 1.03          | **0.692**   |
+|------------|-------------|---------------|---------------|-------------|
+| Fastest    | 2           | 3             | 1             | 6           |
 
+- `Tritium` by rdebath
+  - https://github.com/rdebath/Brainfuck
 - `bffsree` by Sree Kotay 
   - Implementing brainfuck Part 1: http://sree.kotay.com/2013/02/implementing-brainfuck.html 
   - Implementing brainfuck Part 2: http://sree.kotay.com/2013/02/implementing-brainfuck-part-2.html
-- `BrainForked` by John Griffin
-  - https://github.com/JohnCGriffin/BrainForked
 - `brust` by Mugi Noda (my previous work)
   - https://github.com/void-hoge/bropt
   - https://qiita.com/voidhoge/items/a4ca5888a624523906ae
