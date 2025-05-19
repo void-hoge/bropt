@@ -3,7 +3,7 @@ use std::io::{self, Write, Read};
 use std::iter::Peekable;
 
 #[derive(Debug, PartialEq)]
-pub enum InstType{
+pub enum InstType {
     ShiftInc,
     Output,
     Input,
@@ -239,11 +239,11 @@ pub fn remove_dead_writes(prog: Vec<BaseInst>) -> Vec<BaseInst> {
             let mut targets = HashSet::<i32>::new();
             let mut ptr: i32 = 0;
             let mut removed = Vec::with_capacity(prog.len());
-            for inst in prog.iter().rev() {
+            for inst in prog.into_iter().rev() {
                 match inst {
                     BaseInst::Shift(offset) => {
                         ptr -= offset;
-                        removed.push(BaseInst::Shift(*offset));
+                        removed.push(BaseInst::Shift(offset));
                     },
                     BaseInst::Reset => {
                         if targets.insert(ptr) {
@@ -259,29 +259,29 @@ pub fn remove_dead_writes(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                         removed.push(BaseInst::Output);
                     },
                     BaseInst::Mul(offset, weight) => {
-                        let target = ptr + *offset;
+                        let target = ptr + offset;
                         targets.remove(&ptr);
                         if !targets.contains(&target) {
-                            removed.push(BaseInst::Mul(*offset, *weight));
+                            removed.push(BaseInst::Mul(offset, weight));
                         }
                     },
                     BaseInst::Inc(n) => {
                         if !targets.contains(&ptr) {
-                            removed.push(BaseInst::Inc(*n));
+                            removed.push(BaseInst::Inc(n));
                         }
                     },
                     BaseInst::Seek(offset) => {
                         targets.clear();
-                        removed.push(BaseInst::Seek(*offset));
+                        removed.push(BaseInst::Seek(offset));
                     },
                     BaseInst::Skip(offset, inc, delta) => {
                         targets.clear();
-                        removed.push(BaseInst::Skip(*offset, *inc, *delta));
+                        removed.push(BaseInst::Skip(offset, inc, delta));
                     },
                     BaseInst::Block(inner, flag) => {
                         targets.clear();
-                        let removed_inner = remove_block(inner.clone(), *flag);
-                        removed.push(BaseInst::Block(removed_inner, *flag));
+                        let removed_inner = remove_block(inner, flag);
+                        removed.push(BaseInst::Block(removed_inner, flag));
                     },
                 }
             }
@@ -495,7 +495,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
             dp = (dp as isize + *arg as isize) as usize;
             data[dp] += *inc;
             dp = (dp as isize + *delta as isize) as usize;
-        }else if *cmd == InstType::Output {
+        } else if *cmd == InstType::Output {
             dp = (dp as isize + *arg as isize) as usize;
             print!("{}", data[dp] as char);
             data[dp] += *inc;
