@@ -1,5 +1,5 @@
 mod brainfuck;
-use brainfuck::{compile, unsafe_run};
+use brainfuck::{compile, unsafe_run, get_offset};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -23,9 +23,10 @@ fn main() {
     let args = Args::parse();
     let code = std::fs::read_to_string(&args.file).expect("Failed to read the file.");
     let prog = compile(&code);
+    let offset = get_offset(&prog);
     if args.flush {
-        unsafe_run::<true>(prog, args.length);
+        unsafe_run::<true>(prog, args.length, offset);
     } else {
-        unsafe_run::<false>(prog, args.length);
+        unsafe_run::<false>(prog, args.length, offset);
     }
 }

@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 use std::io::{self, Write, Read};
 use std::iter::Peekable;
+use std::cmp;
 
 #[derive(Debug, PartialEq)]
 pub enum InstType {
@@ -561,11 +562,11 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
 
 #[allow(dead_code)]
 #[inline]
-pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
+pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize, offset: isize) {
+    let mut ip = 0usize;
     let mut data = vec![0u8; length];
-    let mut ptr = data.as_mut_ptr();
-    let mut ip = 0;
     unsafe {
+        let mut ptr = data.as_mut_ptr().offset(offset);
         while ip < prog.len() {
             let Inst { cmd, arg, inc, delta } = &prog[ip];
             if *cmd == InstType::Output {
@@ -652,4 +653,20 @@ pub fn compile(code: &str) -> Vec<Inst> {
     prog = fold_mul_loops(prog);
     prog = fold_skip_loops(prog);
     flatten(prog)
+}
+
+pub fn get_offset(prog: &Vec<Inst>) -> isize {
+    let mut offset = 0isize;
+    for inst in prog {
+        match inst.cmd {
+            InstType::Mul => {
+                offset = cmp::max(offset, -inst.arg as isize);
+            },
+            InstType::Mulzero => {
+                offset = cmp::max(offset, -inst.arg as isize);
+            },
+            _ => {},
+        }
+    }
+    offset
 }
