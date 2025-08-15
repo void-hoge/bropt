@@ -21,7 +21,13 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let code = std::fs::read_to_string(&args.file).expect("Failed to read the file.");
-    let prog = compile(&code);
+    let prog = match compile(&code) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    };
     let offset = get_offset(&prog);
     if args.flush {
         unsafe_run::<true>(prog, args.length, offset);
