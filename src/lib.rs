@@ -2,6 +2,7 @@ pub mod brainfuck;
 
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 
 use brainfuck::{Inst, compile as bf_compile, run_with_state};
 
