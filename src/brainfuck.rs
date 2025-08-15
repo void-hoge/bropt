@@ -3,7 +3,7 @@ use std::io::{self, Write, Read};
 use std::iter::Peekable;
 use std::cmp;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum InstType {
     ShiftInc,
     Output,
@@ -17,7 +17,7 @@ pub enum InstType {
     Close,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Inst {
     cmd: InstType,
     inc: u8,
@@ -558,6 +558,81 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
         }
         ip += 1;
     }
+}
+
+#[allow(dead_code)]
+#[inline]
+pub fn run_to_bytes(prog: Vec<Inst>, length: usize) -> Vec<u8> {
+    let mut data = vec![0u8; length];
+    let mut dp: usize = 0;
+    let mut ip: usize = 0;
+    let mut output = Vec::new();
+    while ip < prog.len() {
+        let Inst { cmd, arg, inc, delta } = &prog[ip];
+        if *cmd == InstType::ShiftInc {
+            dp = (dp as isize + *arg as isize) as usize;
+            data[dp] += *inc;
+            dp = (dp as isize + *delta as isize) as usize;
+        } else if *cmd == InstType::Output {
+            dp = (dp as isize + *arg as isize) as usize;
+            output.push(data[dp]);
+            data[dp] += *inc;
+            dp = (dp as isize + *delta as isize) as usize;
+        } else if *cmd == InstType::Input {
+            dp = (dp as isize + *arg as isize) as usize;
+            let mut buf = [0u8];
+            if io::stdin().read_exact(&mut buf).is_ok() {
+                data[dp] = buf[0];
+            } else {
+                data[dp] = 0u8;
+            }
+            data[dp] += *inc;
+            dp = (dp as isize + *delta as isize) as usize;
+        } else if *cmd == InstType::Seek {
+            while data[dp] != 0 {
+                dp = (dp as isize + *arg as isize) as usize;
+            }
+            dp = (dp as isize + *delta as isize) as usize;
+            data[dp] += *inc;
+        } else if *cmd == InstType::Skip {
+            while data[dp] != 0 {
+                let pos = (dp as isize + *delta as isize) as usize;
+                data[pos] += *inc;
+                dp = (dp as isize + *arg as isize) as usize;
+            }
+        } else if *cmd == InstType::Set {
+            dp = (dp as isize + *arg as isize) as usize;
+            data[dp] = *inc;
+            dp = (dp as isize + *delta as isize) as usize;
+        } else if *cmd == InstType::Mul {
+            if data[dp] != 0 {
+                let pos = (dp as isize + *arg as isize) as usize;
+                data[pos] += data[dp] * *inc;
+            }
+        } else if *cmd == InstType::Mulzero {
+            if data[dp] != 0 {
+                let pos = (dp as isize + *arg as isize) as usize;
+                data[pos] += data[dp] * *inc;
+                data[dp] = 0;
+            }
+            dp = (dp as isize + *delta as isize) as usize;
+        } else if *cmd == InstType::Open {
+            if data[dp] == 0 {
+                ip = *arg as usize;
+            } else {
+                data[dp] += *inc;
+                dp = (dp as isize + *delta as isize) as usize;
+            }
+        } else /* if *cmd == InstType::Close */ {
+            if data[dp] != 0 {
+                ip = *arg as usize;
+                data[dp] += *inc;
+                dp = (dp as isize + *delta as isize) as usize;
+            }
+        }
+        ip += 1;
+    }
+    output
 }
 
 #[allow(dead_code)]

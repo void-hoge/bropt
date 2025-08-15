@@ -1,5 +1,4 @@
-mod brainfuck;
-use brainfuck::{compile, unsafe_run, get_offset};
+use bropt::brainfuck::{compile, unsafe_run, get_offset};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
