@@ -660,11 +660,12 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
 
 #[allow(dead_code)]
 #[inline]
-pub fn run_with_state(prog: Vec<Inst>, length: usize) -> (Vec<u8>, Vec<u8>, usize) {
+pub fn run_with_state(prog: Vec<Inst>, length: usize, input: &[u8]) -> (Vec<u8>, Vec<u8>, usize) {
     let mut data = vec![0u8; length];
     let mut dp: usize = 0;
     let mut ip: usize = 0;
     let mut output = Vec::new();
+    let mut in_idx = 0usize;
     while ip < prog.len() {
         let Inst {
             cmd,
@@ -683,9 +684,9 @@ pub fn run_with_state(prog: Vec<Inst>, length: usize) -> (Vec<u8>, Vec<u8>, usiz
             dp = (dp as isize + *delta as isize) as usize;
         } else if *cmd == InstType::Input {
             dp = (dp as isize + *arg as isize) as usize;
-            let mut buf = [0u8];
-            if io::stdin().read_exact(&mut buf).is_ok() {
-                data[dp] = buf[0];
+            if in_idx < input.len() {
+                data[dp] = input[in_idx];
+                in_idx += 1;
             } else {
                 data[dp] = 0u8;
             }

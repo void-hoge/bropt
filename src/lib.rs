@@ -22,13 +22,18 @@ pub struct Program {
 
 #[pymethods]
 impl Program {
+    #[pyo3(signature = (length, input=None))]
     pub fn run(
         &self,
         py: Python<'_>,
         length: usize,
+        input: Option<&PyBytes>,
     ) -> PyResult<(Py<PyBytes>, Py<PyBytes>, usize)> {
         let prog = self.prog.clone();
-        match std::panic::catch_unwind(|| run_with_state(prog, length)) {
+        let input_bytes = input
+            .map(|b| b.as_bytes().to_vec())
+            .unwrap_or_else(Vec::new);
+        match std::panic::catch_unwind(|| run_with_state(prog, length, &input_bytes)) {
             Ok((out, data, ptr)) => Ok((
                 PyBytes::new(py, &out).into(),
                 PyBytes::new(py, &data).into(),
