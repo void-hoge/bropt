@@ -3,7 +3,7 @@ pub mod brainfuck;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
-use brainfuck::{compile as bf_compile, run_to_bytes, Inst};
+use brainfuck::{Inst, compile as bf_compile, run_with_state};
 
 fn panic_to_pyerr(err: Box<dyn std::any::Any + Send>) -> PyErr {
     if let Some(s) = err.downcast_ref::<&str>() {
@@ -22,10 +22,18 @@ pub struct Program {
 
 #[pymethods]
 impl Program {
-    pub fn run(&self, py: Python<'_>, length: usize) -> PyResult<Py<PyBytes>> {
+    pub fn run(
+        &self,
+        py: Python<'_>,
+        length: usize,
+    ) -> PyResult<(Py<PyBytes>, Py<PyBytes>, usize)> {
         let prog = self.prog.clone();
-        match std::panic::catch_unwind(|| run_to_bytes(prog, length)) {
-            Ok(out) => Ok(PyBytes::new(py, &out).into()),
+        match std::panic::catch_unwind(|| run_with_state(prog, length)) {
+            Ok((out, data, ptr)) => Ok((
+                PyBytes::new(py, &out).into(),
+                PyBytes::new(py, &data).into(),
+                ptr,
+            )),
             Err(err) => Err(panic_to_pyerr(err)),
         }
     }
