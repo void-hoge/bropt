@@ -2,7 +2,7 @@ pub mod brainfuck;
 
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::{PyByteArray, PyBytes};
 
 use brainfuck::{Inst, compile as bf_compile, run_with_state};
 
@@ -28,16 +28,23 @@ impl Program {
         &self,
         py: Python<'_>,
         length: usize,
-        input: Option<&PyBytes>,
-    ) -> PyResult<(Py<PyBytes>, Py<PyBytes>, usize)> {
+        input: Option<&PyAny>,
+    ) -> PyResult<(Py<PyByteArray>, Py<PyByteArray>, usize)> {
         let prog = self.prog.clone();
-        let input_bytes = input
-            .map(|b| b.as_bytes().to_vec())
-            .unwrap_or_else(Vec::new);
+        let input_bytes = match input {
+            Some(obj) => {
+                if let Ok(b) = obj.downcast::<PyBytes>() {
+                    b.as_bytes().to_vec()
+                } else {
+                    obj.extract::<Vec<u8>>()?
+                }
+            }
+            None => Vec::new(),
+        };
         match std::panic::catch_unwind(|| run_with_state(prog, length, &input_bytes)) {
             Ok((out, data, ptr)) => Ok((
-                PyBytes::new(py, &out).into(),
-                PyBytes::new(py, &data).into(),
+                PyByteArray::new(py, &out).into(),
+                PyByteArray::new(py, &data).into(),
                 ptr,
             )),
             Err(err) => Err(panic_to_pyerr(err)),
