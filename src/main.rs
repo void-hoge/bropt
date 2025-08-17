@@ -1,4 +1,4 @@
-use bropt::brainfuck::{compile, unsafe_run, get_offset};
+use bropt::brainfuck::{compile, get_offset, run, unsafe_run};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -16,6 +16,10 @@ struct Args {
     /// Flush stdout after each . instruction
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     flush: bool,
+
+    /// Run the interpreter in safe mode
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    safe: bool,
 }
 
 fn main() {
@@ -23,7 +27,13 @@ fn main() {
     let code = std::fs::read_to_string(&args.file).expect("Failed to read the file.");
     let prog = compile(&code);
     let offset = get_offset(&prog);
-    if args.flush {
+    if args.safe {
+        if args.flush {
+            run::<true>(prog, args.length);
+        } else {
+            run::<false>(prog, args.length);
+        }
+    } else if args.flush {
         unsafe_run::<true>(prog, args.length, offset);
     } else {
         unsafe_run::<false>(prog, args.length, offset);
