@@ -22,6 +22,7 @@ Arguments:
 Options:
   -l, --length <LENGTH>  Number of cells in the memory tape [default: 65536]
   -f, --flush            Flush stdout after each . instruction
+  -s, --safe             Run the interpreter in safe mode
   -h, --help             Print help
 $
 ```
