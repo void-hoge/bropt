@@ -1,4 +1,4 @@
-use bropt::brainfuck::{compile, get_offset, safe_run, unsafe_run};
+use bropt::brainfuck::{compile, get_offset, run, unsafe_run};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -29,9 +29,9 @@ fn main() {
     let offset = get_offset(&prog);
     if args.safe {
         if args.flush {
-            safe_run::<true>(prog, args.length, offset);
+            run::<true>(prog, args.length);
         } else {
-            safe_run::<false>(prog, args.length, offset);
+            run::<false>(prog, args.length);
         }
     } else if args.flush {
         unsafe_run::<true>(prog, args.length, offset);
