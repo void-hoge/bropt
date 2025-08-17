@@ -28,7 +28,7 @@ impl Program {
         &self,
         py: Python<'_>,
         length: usize,
-        input: Option<&PyAny>,
+        input: Option<&Bound<'_, PyAny>>
     ) -> PyResult<(Py<PyByteArray>, Py<PyByteArray>, usize)> {
         let prog = self.prog.clone();
         let input_bytes = match input {
@@ -61,7 +61,7 @@ fn compile(code: &str) -> PyResult<Program> {
 }
 
 #[pymodule]
-fn bropt(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn bropt(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compile, m)?)?;
     m.add_class::<Program>()?;
     Ok(())
