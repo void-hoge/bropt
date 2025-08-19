@@ -28,7 +28,7 @@ impl Program {
         &self,
         py: Python<'_>,
         length: usize,
-        input: Option<&Bound<'_, PyAny>>
+        input: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<(Py<PyByteArray>, Py<PyByteArray>, usize)> {
         let prog = self.prog.clone();
         let input_bytes = match input {
