@@ -39,10 +39,7 @@ pub enum BaseInst {
 }
 
 pub fn parse(code: &str) -> Vec<BaseInst> {
-    fn parse_block<I: Iterator<Item = char>>(
-        iter: &mut I,
-        in_block: bool,
-    ) -> Result<(Vec<BaseInst>, bool), String> {
+    fn parse_block<I: Iterator<Item = char>>(iter: &mut I, in_block: bool) -> Result<(Vec<BaseInst>, bool), String> {
         let mut prog = Vec::new();
         let mut delta: i32 = 0;
         let mut stability = true;
@@ -177,8 +174,7 @@ pub fn fold_skip_loops(prog: Vec<BaseInst>) -> Vec<BaseInst> {
                         }
                     }
                 }
-                if valid && inc_detected && (i16::MIN as i32..i16::MAX as i32).contains(&inc_offset)
-                {
+                if valid && inc_detected && (i16::MIN as i32..i16::MAX as i32).contains(&inc_offset) {
                     folded.push(BaseInst::Skip(ptr, inc_amount, inc_offset as i16));
                 } else {
                     folded.push(BaseInst::Block(folded_inner, flag));
@@ -239,9 +235,7 @@ pub fn remove_dead_writes(prog: Vec<BaseInst>) -> Vec<BaseInst> {
         if !stable {
             prog.into_iter()
                 .map(|inst| match inst {
-                    BaseInst::Block(inner, flag) => {
-                        BaseInst::Block(remove_block(inner, flag), flag)
-                    }
+                    BaseInst::Block(inner, flag) => BaseInst::Block(remove_block(inner, flag), flag),
                     other => other,
                 })
                 .collect()
@@ -308,11 +302,7 @@ pub fn move_repeating_resets(prog: Vec<BaseInst>) -> Vec<BaseInst> {
         match inst {
             BaseInst::Block(block, flag) => {
                 let moved_block = move_repeating_resets(block);
-                if flag
-                    && moved_block
-                        .iter()
-                        .all(|ins| !matches!(ins, BaseInst::Block(..)))
-                {
+                if flag && moved_block.iter().all(|ins| !matches!(ins, BaseInst::Block(..))) {
                     let mut unremovable = HashSet::<i32>::new();
                     unremovable.insert(0);
                     let mut ptr: i32 = 0;
@@ -582,12 +572,7 @@ pub fn run<const FLUSH: bool>(prog: Vec<Inst>, length: usize) {
     let mut dp: usize = 0;
     let mut ip: usize = 0;
     while ip < prog.len() {
-        let Inst {
-            cmd,
-            arg,
-            inc,
-            delta,
-        } = &prog[ip];
+        let Inst { cmd, arg, inc, delta } = &prog[ip];
         if *cmd == InstType::ShiftInc {
             dp = (dp as isize + *arg as isize) as usize;
             data[dp] += *inc;
@@ -667,12 +652,7 @@ pub fn run_with_state(prog: Vec<Inst>, length: usize, input: &[u8]) -> (Vec<u8>,
     let mut output = Vec::new();
     let mut in_idx = 0usize;
     while ip < prog.len() {
-        let Inst {
-            cmd,
-            arg,
-            inc,
-            delta,
-        } = &prog[ip];
+        let Inst { cmd, arg, inc, delta } = &prog[ip];
         if *cmd == InstType::ShiftInc {
             dp = (dp as isize + *arg as isize) as usize;
             data[dp] += *inc;
@@ -749,12 +729,7 @@ pub fn unsafe_run<const FLUSH: bool>(prog: Vec<Inst>, length: usize, offset: isi
     unsafe {
         let mut ptr = data.as_mut_ptr().offset(offset);
         while ip < prog.len() {
-            let Inst {
-                cmd,
-                arg,
-                inc,
-                delta,
-            } = &prog[ip];
+            let Inst { cmd, arg, inc, delta } = &prog[ip];
             if *cmd == InstType::Output {
                 ptr = ptr.offset(*arg as isize);
                 print!("{}", ptr.read() as char);
